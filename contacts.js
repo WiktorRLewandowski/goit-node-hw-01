@@ -1,5 +1,6 @@
 const fs = require('fs').promises
 const path = require('path')
+const crypto = require('crypto')
 require('colors')
 
 const contactsPath = path.join(__dirname, 'db', 'contacts.json')
@@ -15,10 +16,10 @@ async function readFile() {
     }
 }
 
-async function writeFile() {
+async function writeFile(data) {
     try {
-        const data = await fs.writeFile(contactsPath)
-        return JSON.stringify(data)
+        await fs.writeFile(contactsPath, JSON.stringify(data, null, 2))
+        console.log("List has been updated")
     }
     catch(error) {
         console.log("Error while trying to overwrite the file".red, error)
@@ -44,7 +45,10 @@ async function listContacts() {
 async function getContactById(contactId) {
     try {
     const contacts = await readFile()
-    contacts.find(contact => contact.id === contactId)
+    searchedContact = contacts.find(contact => contact.id === contactId)
+    return searchedContact
+        ? console.table(searchedContact)
+        : console.log('No such contact'.red)
     }
     catch(error) {
         console.log("Error while trying to get the contact by ID".red, error)
@@ -73,9 +77,21 @@ async function removeContact(contactId) {
 
 }
 
-function addContact(name, email, phone) {
-
-}
+async function addContact(name, email, phone) {
+    try {
+        const contacts = await readFile()
+        const newContact = {
+        id: crypto.randomUUID(),
+        name,
+        email,
+        phone
+        };
+        await writeFile([...contacts, newContact])
+    }
+    catch(error) {
+        console.log('Error while trying to add a contact'.red, error)
+    }
+} 
 
 module.exports = {
     listContacts,
